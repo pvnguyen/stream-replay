@@ -10,6 +10,6 @@ $javac src/*.java
 
 * To run:
 
-$java ReplayStream <file_name> <bytes_per_second>
+$java ReplayStream file_name bytes_per_second
 
 
