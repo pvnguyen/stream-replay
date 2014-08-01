@@ -1,40 +1,55 @@
-/**
- * Created by phuong.nguyen
- */
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
+
+/**
+ * Created by phuong.nguyen on 6/26/14.
+ */
 
 public class ReplayInputStream extends InputStream {
     private final InputStream rawStream;
-    private long totalBytesRead;
-    private long startTimeMillis;
+    private final long maxBytesPerSec;
+    private final long startTime = System.currentTimeMillis();
 
-    private static final int BYTES_PER_KILOBYTE = 1024;
-    private static final int MILLIS_PER_SECOND = 1000;
-    private final int ratePerMillis;
+    private long bytesRead = 0;
+    private static final long SLEEP_DURATION_MS = 50;
 
-    public ReplayInputStream(InputStream rawStream, int kBytesPersecond) {
+    public ReplayInputStream(InputStream rawStream, long maxBytesPerSec) {
         this.rawStream = rawStream;
-        ratePerMillis = kBytesPersecond * BYTES_PER_KILOBYTE / MILLIS_PER_SECOND;
+        this.maxBytesPerSec = maxBytesPerSec;
+    }
+
+    @Override
+    public void close() throws IOException {
+        rawStream.close();
     }
 
     @Override
     public int read() throws IOException {
-        if (startTimeMillis == 0) {
-            startTimeMillis = System.currentTimeMillis();
+        delay();
+        int data = rawStream.read();
+        if (data != -1) {
+            bytesRead++;
         }
-        long now = System.currentTimeMillis();
-        long interval = now - startTimeMillis;
+        return data;
+    }
 
-        if (interval * ratePerMillis < totalBytesRead + 1) {
+    private void delay() throws IOException {
+        long curSpeed = getBytesPerSec();
+        if (curSpeed > maxBytesPerSec) {
             try {
-                final long sleepTime = ratePerMillis / (totalBytesRead + 1) - interval;
-                Thread.sleep(Math.max(1, sleepTime));
+                long sleepTime = (curSpeed - maxBytesPerSec) * 1000;
+                Thread.sleep(Math.max(sleepTime, SLEEP_DURATION_MS));
             } catch (InterruptedException e) {
             }
         }
-        totalBytesRead += 1;
+    }
 
-        return rawStream.read();
+    public long getBytesPerSec() {
+        long elapsed = (System.currentTimeMillis() - startTime) / 1000;
+        if (elapsed == 0) {
+            return bytesRead;
+        } else {
+            return bytesRead / elapsed;
+        }
     }
 }
