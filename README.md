@@ -1,15 +1,17 @@
 stream-replay
 =============
 
-Replay input stream with a controlled speed
+Replay input stream with a controlled speed.
 
 
-* To compile:
+## To compile:
 
-$javac src/*.java
+```
+javac src/*.java
+```
 
-* To run:
+## To run:
 
-$java ReplayStream file_name bytes_per_second
-
-
+```
+java ReplayStream file_name bytes_per_second
+```
